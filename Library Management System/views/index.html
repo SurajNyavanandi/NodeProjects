@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Project</title>
+</head>
+<body>
+    <h1>Library Management System</h1>
+    <label for="bookName">Book Name:</label>
+    <input type="text" name="bookName" id="bookName" placeholder="Enter Book Name">
+    <button onclick="addBook()">Add Book</button>
+    <h3>User Books</h3>
+    <div id="cont1"></div>
+    <h3>Returned Books</h3>
+    <div id="cont2"></div>
+    
+    
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.2/axios.min.js"></script>
+<script>
+    let api=`http://localhost:7007/library`;
+    let cont1=document.querySelector('#cont1');
+    let cont2=document.querySelector('#cont2');
+    displayBooks();
+    displayReturnBooks();
+    function addBook(){
+        let book={
+            name:document.querySelector('#bookName').value,
+        }
+        axios.post(`${api}/book`,book)
+             .then(()=>{
+                console.log("Book Posted Successfully");
+                displayBooks();
+             })
+             .catch((err)=>console.log("Error posting book ",err))
+    }
+    function displayBooks(){
+        cont1.innerHTML='';
+        axios.get(`${api}/book`)
+             .then((res)=>{
+                let arr=res.data;
+                arr.forEach((book,index)=>{
+                    let createdTime=new Date(book.createdAt);
+                    let localCreatedTime=createdTime.toLocaleString();
+                    let currentTime=new Date();
+                    let fine=(Math.ceil(Math.abs((createdTime-currentTime)/(1000*60*60)))-1)*(10);
+                    let returnTime=(new Date(createdTime.getTime()+(1000*60*60))).toLocaleString();
+                    let ic1=document.createElement('div');
+                    ic1.innerHTML=`<ul>
+                                     <li>Book Name:${book.name}</li>
+                                     <li>Book Taken on:${localCreatedTime}</li>
+                                     <li>Book should return on:${returnTime}</li>
+                                     <li>Fine:₹${fine}</li>
+                                 </ul>
+                                 <button onclick="returnBook(this)" >Return Book</button>
+                                 <button onclick="payFine('${book.id}','${book.name}','${returnTime}','${fine}',this)" style="display: none" >Pay Fine :₹${fine}</button>
+                                 `
+                    cont1.appendChild(ic1);
+                    
+                })
+             })
+             .catch((err)=>console.log("Error displaying books",err))
+ 
+    }
+    function returnBook(returnButton){
+        returnButton.nextElementSibling.style.display="inline-block";
+        returnButton.style.display="none";
+    }
+    function payFine(id,name,returnTime,fine,payButton){
+
+              let returnBook={
+                name:name,
+                time:returnTime,
+                fine:fine
+              }
+              console.log(typeof(returnBook.name),typeof(returnBook.time),typeof(returnBook.fine));
+        axios.post(`${api}/returnbook`,returnBook)
+             .then((res)=>{
+                console.log("Return Book Posted Successfully");
+                displayReturnBooks();
+             })
+             .catch((err)=>console.log("Error posting return book",err));
+
+        axios.delete(`${api}/book/${id}`)
+             .then((res)=>{
+                console.log("Deleted user book successfully");
+                displayBooks();
+             })
+             .catch((err)=>console.log("Error deleting user book"));
+             
+    }
+    function displayReturnBooks(){
+        cont2.innerHTML="";
+        axios.get(`${api}/returnbook`)
+             .then((res)=>{
+                    let arr=res.data;
+                    arr.forEach((book,index)=>{
+                    let returnedDateLocal=new Date(book.createdAt);
+                     let time=returnedDateLocal.toLocaleString();
+                      let ic2=document.createElement('div');
+                      ic2.innerHTML=`<ul>
+                                        <li>Book Name:${book.name}</li>
+                                        <li>Book Returned on:${time}</li>
+                                        <li>Fine Paid:₹${book.fine}</li>
+                                   </ul>`;
+                     cont2.appendChild(ic2);
+                    })
+             })
+             .catch((err)=>console.log("Error displaying returned books",err));
+           
+    }
+
+</script>
+</html>
