@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Appointment App</title>
+</head>
+<body>
+      <h1>Booking Appointment App</h1> 
+      <label for="name">Name :</label>
+      <input type="text" name="name" id="name">
+      <label for="email">Email :</label>
+      <input type="email" name="email" id="email">
+      <label for="number">Phone Number :</label>
+      <input type="tel" name="number" id="number">
+      <button onclick="addUser()">Add User</button>
+      <h4>Users list</h4>
+      <div id="container"></div>
+      
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.2/axios.min.js"></script>
+<script>
+      let container=document.querySelector('#container');
+      let api=`https://crudcrud.com/api/9dbe00c412a149118011bb354361adbf/BookingApp`;
+      displayUsers();
+      function addUser(){
+        let user={
+            name:document.querySelector('#name').value,
+            email:document.querySelector('#email').value,
+            number:document.querySelector('#number').value
+        }
+        axios.post(`${api}`,user)
+             .then(()=>{
+                displayUsers();
+                clearInputs();
+                console.log("User details posted successfully")
+             })
+             .catch(()=>console.log("Error posting user details"))
+        }
+      function displayUsers(){
+           container.innerHTML="";
+           axios.get(`${api}`)
+                .then((res)=>{
+                    let arr=res.data;
+                    arr.forEach((user,index)=>{
+                        let ic=document.createElement('div');
+                        ic.innerHTML=`<span>${user._id}--${user.name}--${user.email}--${user.number}</span>
+                                      <button onclick="editUser(this,'${user.name}','${user.email}','${user.number}')">Edit</button>
+                                      <button onclick="saveUser(this,'${user._id}')" style="display: none">Save</button>
+                                      <button onclick="deleteUser('${user._id}')">Delete</button>`;
+                        container.appendChild(ic);
+                    })
+                })
+                .catch((err)=>console.log("Error displaying user details"))
+      }
+      function editUser(editButton,name,email,number){
+           editButton.nextElementSibling.style.display="inline-block";
+           editButton.style.display="none";
+
+           document.querySelector('#name').value=name;
+           document.querySelector('#email').value=email;
+           document.querySelector('#number').value=number;
+           document.querySelector('#name').focus();
+
+           
+      }
+      function saveUser(saveButton,id){
+         saveButton.previousElementSibling.style.display="inline-block";
+         saveButton.style.display="none";
+
+         let newValues={
+            name:document.querySelector('#name').value,
+            email:document.querySelector('#email').value,
+            number:document.querySelector('#number').value
+         }
+
+         axios.put(`${api}/${id}`,newValues)
+              .then(()=>{
+                    displayUsers();
+                    clearInputs();
+                    console.log("User details updated successfully");
+              })
+              .catch((err)=>console.log("Error updating user details"))
+
+      }
+      function deleteUser(id){
+           axios.delete(`${api}/${id}`)
+                .then(()=>{
+                    displayUsers();
+                    clearInputs();
+                    console.log("User details deleted successfully");
+                })
+                .catch((err)=>console.log("Error deleting user details"))
+      }
+      function clearInputs(){
+           document.querySelector('#name').value="";
+           document.querySelector('#email').value="";
+           document.querySelector('#number').value="";
+      } 
+</script>
+</html>
