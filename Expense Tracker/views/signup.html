@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignUp</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h3>SignUp</h3>
+    <form action="" onsubmit="postSignUp(event)">
+        <label for="name">Name :</label>
+        <input type="text" name="name" id="name" placeholder="Enter Name" required>
+        <label for="email">Email :</label>
+        <input type="email" name="email" id="email" placeholder="Enter Email" required>
+        <label for="password">Password :</label>
+        <input type="password" name="password" id="password" placeholder="********" required>
+        <button type="submit">SignUp</button>
+    </form>
+    <a href="http://localhost:7000/login">Existing User---Login</a>
+    <div id="cont"></div>
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.2/axios.min.js"></script>
+<script>
+    const api = 'http://localhost:7000/user';
+    const cont = document.querySelector('#cont');
+    
+    function postSignUp(event) {
+        event.preventDefault();
+        const user = {
+            name: document.querySelector('#name').value,
+            email: document.querySelector('#email').value,
+            password: document.querySelector('#password').value
+        };
+        
+        axios.post(`${api}/signup`, user)
+            .then(res => {
+                // cont.innerHTML = '';
+                // console.log("res", res);
+                // cont.innerHTML = res.data.Message;
+                clearInputs();
+                alert("Signup Successful");
+                if(res.status===201){
+                window.location.href=`http://localhost:7000/login`;
+               }
+            })
+            .catch(err => {
+                cont.innerHTML = '';
+                console.log("err", err);
+                cont.innerHTML = err.response.data.Error;
+            });
+    }
+    function clearInputs(){
+        document.querySelector('#name').value='';
+        document.querySelector('#email').value='';
+        document.querySelector('#password').value='';
+    }
+</script>
+</html>
