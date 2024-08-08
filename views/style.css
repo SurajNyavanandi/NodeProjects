@@ -1,0 +1,79 @@
+body {
+    background-color: white;
+    color: black;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+h3, h4 {
+    margin: 20px 0;
+    text-align: center;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+label, input, select, button {
+    margin: 10px 0;
+    font-size: 16px;
+}
+
+label {
+    margin-right: 10px;
+}
+
+input, select {
+    padding: 10px;
+    border: 1px solid lightgrey;
+    border-radius: 5px;
+    width: 80%;
+    max-width: 400px;
+}
+
+button {
+    background-color: lightgrey;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: grey;
+    color: white;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0 20px;
+}
+
+li {
+    background-color: lightgrey;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+}
+
+span {
+    display: block;
+}
+
+a {
+    display: block;
+    text-align: center;
+    margin: 20px 0;
+    text-decoration: none;
+    color: black;
+}
+
+a button {
+    margin: 0;
+}

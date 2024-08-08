@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense</title>
+    <link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+    <h3>Add Expense</h3>
+    <form action="" onsubmit="postExpense(event)" >
+        <label for="amount">Amount :</label>
+        <input type="number" name="amount" id="amount" placeholder="Enter Amount " required>
+        <label for="description">Description :</label>
+        <input type="text" name="description" id="description" placeholder="Enter Description" required>
+        <label for="category">Category :</label>
+        <select name="category" id="category">
+            <option value="Fuel">Fuel</option>
+            <option value="Movie">Movie</option>
+            <option value="Food">Food</option>
+            <option value="Others">Others</option>
+        </select> 
+        <button type="submit">Add Expense</button>
+    </form>
+    <ul id="cont2"></ul>
+    <button onclick="buyPremium(event)" id="buyPremium">Buy Premium</button>
+    
+    <h4>List of All Expenses</h4>
+    <div>
+        <label for="expenses-per-page">Rows per page:</label>
+        <select id="expenses-per-page" onchange="updateExpensesPerPage()">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+        </select>
+    </div>
+    <ul id="cont"></ul>
+    <div id="pagination" style="display: flex; align-items: center; justify-content: center;">
+        <button onclick="prevPage()" style="margin: 0 10px;">Previous</button>
+        <span id="page-info" style="margin: 0 10px;"></span>
+        <button onclick="nextPage()" style="margin: 0 10px;">Next</button>
+    </div>
+    
+    <ul id="cont3"></ul>
+    <u1 id="cont4"></u1> 
+    <ul id="cont5"></ul>
+   
+
+</body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.2/axios.min.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>            
+                                                                     //BASIC CODE-1 
+       let api=`http://localhost:7000/expense`;
+       let cont=document.querySelector('#cont');
+       //Post Expense
+       function postExpense(event){
+             event.preventDefault();
+
+             let expense={
+                amount:document.querySelector('#amount').value,
+                description :document.querySelector('#description').value,
+                category:document.querySelector('#category').value
+             }
+             axios.post(`${api}/addexpense`,expense,{
+                headers:{
+                    'Authorization':localStorage.getItem('token')
+                }
+             })
+                  .then((res)=>{
+                   console.log("Posted expense details");
+                   displayExpenses();
+                   clearInputs();
+                  })
+                  .catch((err)=>{
+                    console.log("Error posting expense details",err);
+                  })
+       }
+    //Display Expense
+    let currentPage = 1;
+    let expensesPerPage = localStorage.getItem('expensesPerPage') || 10;
+    let totalPages = 0;
+    document.querySelector('#expenses-per-page').value = expensesPerPage;
+
+    function displayExpenses(page = 1) {
+        axios.get(`${api}/addexpense?page=${page}&limit=${expensesPerPage}`, {
+            headers: {
+                'Authorization': localStorage.getItem('token')
+            }
+        })
+        .then((res) => {
+            cont.innerHTML = '';
+            let arr = res.data.expenses;
+            totalPages = res.data.totalPages;
+            arr.forEach((expense, index) => {
+                let ic = document.createElement('li');
+                ic.innerHTML = `<span>${expense.amount}--${expense.description}--${expense.category}</span>
+                                <button onclick="deleteExpense('${expense.id}')">Delete</button>`;
+                cont.appendChild(ic);
+            });
+            updatePaginationInfo();
+        })
+        .catch((err) => {
+            console.log("Error displaying expenses", err);
+        });
+    }
+
+    function updatePaginationInfo() {
+        const pageInfo = document.getElementById('page-info');
+        pageInfo.innerHTML = `Page ${currentPage} of ${totalPages}`;
+    }
+
+    function nextPage() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            displayExpenses(currentPage);
+        }
+    }
+
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            displayExpenses(currentPage);
+        }
+    }
+
+    displayExpenses();
+    //Delete Expense
+       function deleteExpense(id){
+           axios.delete(`${api}/addexpense/${id}`,{
+                headers:{
+                    'Authorization':localStorage.getItem('token')
+                }
+             })
+                .then((res)=>{
+                    console.log("Expense deleted");
+                    displayExpenses();
+                })
+                .catch((err)=>{
+                    console.log("Error deleting expense",err);
+                })
+       }
+       function clearInputs(){
+        document.querySelector('#amount').value='';
+        document.querySelector('#description').value='';
+        document.querySelector('#category').value='';
+       }
+       function updateExpensesPerPage() {
+            expensesPerPage = document.querySelector('#expenses-per-page').value;
+            localStorage.setItem('expensesPerPage', expensesPerPage);
+            displayExpenses(currentPage);
+        }
+
+
+
+
+
+
+
+                                                                             //PREMIUM CODE-2
+       let api2=`http://localhost:7000/premium`;
+       //PostOrder
+       function buyPremium(event){
+        event.preventDefault();
+  
+            axios.post(`${api2}/createOrder`,{},{
+                headers:{
+                 'Authorization':localStorage.getItem('token')   
+                }
+            })
+            .then((res)=>{
+
+                var options = {
+                    
+                    "key": "rzp_test_PnMJD6zIJVFJFg", 
+                    "amount": res.data.amount, 
+                    "currency": "INR",
+                    "name": "Expense Tracker",
+                    "description": "Test Transaction",
+                    "image": "https://example.com/your_logo",
+                    "order_id": res.data.id, 
+                    "handler": function (response){
+                        axios.post(`${api2}/updateOrderStatus`, {
+                                      orderId: res.data.id
+                                 }, {
+                                   headers: {
+                                    'Authorization': localStorage.getItem('token')
+                                     }
+                         })
+                        .then((res)=>{
+                            console.log("Order status updated successfully");
+                            
+                             //Post-OrderStatus
+                             // UpdatePremiumStatus(localStorage+db);
+                             axios.post(`${api2}/updatePremiumStatus`, {}, {
+                                    headers: {
+                                           'Authorization': localStorage.getItem('token')
+                                          }
+                                      })
+                                    .then((res) => {    
+                                        localStorage.setItem('isPremium','true');    
+                                         console.log("Updated premiumStatus in localStorage successfully");
+                                         window.location.reload();
+                                    })
+                                    .catch((err) => {
+                                        console.log("Error updating premiumStatus in localStorage", err);
+                                    })
+                           
+                        })
+                        .catch((err)=>{
+                            console.log("Error updating order status");
+                        })
+                    },
+                    "prefill": {
+                        "name": "Suraj Nyavanandi",
+                        "email": "gaurav.kumar@example.com",
+                        "contact": "9000090000"
+                    },
+                    "notes": {
+                        "address": "Razorpay Corporate Office"
+                    },
+                    "theme": {
+                        "color": "#3399cc"
+                    }
+                };
+                var rzp1 = new Razorpay(options);
+                rzp1.open();    
+                })
+                .catch((err)=>{
+                  console.log("Error creating order");  
+                })
+                
+                
+                
+            }
+
+
+                                                                        //LEADERBOARD-3
+
+             showLeaderboard();
+             function showLeaderboard(){
+                 document.addEventListener('DOMContentLoaded', () => {    
+              let premium=localStorage.getItem('isPremium');
+              if(premium==='true'){
+                    document.querySelector('#buyPremium').style.display="none";
+                         let cont2=document.querySelector('#cont2');
+                         let div=document.createElement('div');
+                         div.innerHTML=`<span>You are a premium user!</span><br>
+                                        <button onclick="leaderboardImp()">Leaderboard</button>               
+                                        <button onclick="dailyExpenses()">Daily Expenses</button>
+                                        <button onclick="monthlyExpenses()">Monthly Expenses</button>
+                                        <button onclick="yearlyExpenses()">Yearly Expenses</button>
+                                        <button onclick="downloadExpense()">Download file</button>
+                                        <button onclick="previousDownloads()">Previous Download</button>
+                                        `;
+               cont2.appendChild(div);
+            }
+            //leaderboardImp();   
+               });
+             }
+             
+             function leaderboardImp(){
+                let cont3=document.querySelector('#cont3');
+                cont3.innerHTML=`<h3>LeaderBoard</h3>`
+                axios.get(`${api2}/leaderboard`)
+                     .then((res)=>{
+                          let arr=res.data;
+                          arr.forEach((user,index)=>{
+                            let li=document.createElement('li');
+                            li.innerHTML=`<span>${index+1}--Name:${user.name}--Amount:${user.totalAmount}</span>`;
+                            cont3.appendChild(li);
+                          });
+                          console.log("Leaderboard users displayed successfully");
+                     })
+                     .catch((err)=>{
+                          console.log("Error displaying Leaderboard users");
+                     })
+             }
+
+
+
+
+
+
+
+
+
+
+
+                                                       //DAILY MONTHLY YEARLY EXPENSES-4
+    function dailyExpenses() {
+        fetchExpenses('daily');
+    }
+
+    function monthlyExpenses() {
+        fetchExpenses('monthly');
+    }
+
+    function yearlyExpenses() {
+        fetchExpenses('yearly');
+    }
+
+    function fetchExpenses(period) {
+        let url = `${api}/expenses/${period}`;
+        axios.get(url, {
+            headers: {
+                'Authorization': localStorage.getItem('token')
+            }
+        })
+            .then((res) => {
+                cont4.innerHTML = '';
+                cont4.innerHTML = `<h4 style="text-align: center;">${period.toUpperCase()} Expenses</h4>`;
+
+                let arr = res.data;
+                arr.forEach((expense, index) => {
+                    let ic = document.createElement('li');
+                    ic.innerHTML = `<span>${index + 1}. ${new Date(expense.createdAt).toLocaleString()} -- ${expense.amount} -- ${expense.description} -- ${expense.category}}</span>`;
+                    cont4.appendChild(ic);
+                });
+            })
+            .catch((err) => {
+                console.log(`Error fetching ${period} expenses`, err);
+            });
+    }  
+
+
+
+
+
+
+
+                                                          //DOWNLOADING FILE FROM AWS-5
+    let api3=`http://localhost:7000/user`;
+    function downloadExpense(){
+           axios.get(`${api3}/download`,{
+                headers:{
+                    'Authorization':localStorage.getItem('token')
+                }
+             })
+         .then((res)=>{
+            console.log("File downloaded successfully from aws");
+            if (res.status === 200 && res.data.fileurl) {
+            const link = document.createElement('a');
+            let url=res.data.fileurl;
+
+            link.href = res.data.fileurl;
+            link.download = 'expenses.txt'; 
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          axios.post(`${api3}/url`, { url: url }, {
+                headers: {
+                    'Authorization': localStorage.getItem('token'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then((res) => {
+                console.log("Posted url to DB Successfully");
+            })
+            .catch((err) => {
+                console.log("Error posting url to DB", err);
+            });
+             
+        }
+         })
+         .catch((err)=>{
+            console.log("Error downloading file from aws");
+         })
+    };
+
+    let cont5=document.querySelector('#cont5');
+     function previousDownloads(){
+        cont5.innerHTML='';
+        
+        axios.get(`${api3}/url`,{
+                headers:{
+                    'Authorization':localStorage.getItem('token')
+                }
+             })
+             .then((res)=>{
+                console.log("res",res.data.urls);
+                
+                let arr=res.data.urls;
+                cont5.innerHTML=`<h4 style="text-align: center;">Previous Downloaded Urls</h4>`
+                arr.forEach((item,index)=>{
+                    let li=document.createElement('li');
+                    li.innerHTML=`${item.url}`;
+                    cont5.appendChild(li);
+
+                })    
+                console.log("Fetching url from db successful");              
+             })
+             .catch((err)=>{
+                console.log("Error Fetching urls from db  ");
+                
+             })
+     }
+           
+  
+            
+            
+            
+        </script>
+        
+         
+        
+</html>
